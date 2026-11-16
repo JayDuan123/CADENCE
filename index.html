@@ -113,6 +113,17 @@ footer a{color:var(--muted)}
 .legend code{font:12px "JetBrains Mono",monospace;color:var(--muted)}
 .widget a{color:var(--accent-ink)}
 .cell{cursor:pointer}.lab{cursor:pointer}.lab.on{fill:var(--accent-ink);font-weight:600}
+
+.monitor{display:block;margin:26px auto 0;max-width:960px;background:#0f1412;border-radius:12px;padding:10px 12px 8px;text-decoration:none;box-shadow:0 1px 0 var(--line)}
+.monitor canvas{display:block;width:100%;height:110px}
+.monlab{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#9fb8ad;margin-top:4px;text-align:left}
+.monlab .go{margin-left:auto;color:#ff6b6b;white-space:nowrap}
+.monlab .dot{width:8px;height:8px;border-radius:50%;background:#ff4d4d;flex:none;animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}.monlab .dot{animation:none}}
+@media (max-width:760px){.monlab .go{display:none}.monitor canvas{height:80px}}
 </style>
 </head>
 <body>
@@ -130,6 +141,10 @@ footer a{color:var(--muted)}
     <a class="btn" href="https://github.com/JayDuan123/2027-KDD-Ai4s-track-CADENCE" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>Code</a>
     <a class="btn" href="explorer.html"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-6 4 12 2-6h6v2h-4.6L13 20 9 8.6 8.4 14H3z"/></svg>Atom Explorer</a>
   </div>
+  <a class="monitor" id="monitor" href="explorer.html#atom=2278" aria-label="Animated ECG: atom 2278 firing on lead aVF. Open in the Atom Explorer">
+    <canvas id="moncv" aria-hidden="true"></canvas>
+    <div class="monlab"><span class="dot"></span><span id="montxt">Atom #2278 · “aVF deep QRS nadir” firing on a held-out MIMIC-IV-ECG</span><span class="go">Open in Explorer →</span></div>
+  </a>
 </header>
 
 <figure class="teaser">
@@ -351,6 +366,63 @@ function css(v){return getComputedStyle(document.documentElement).getPropertyVal
   }
   draw();
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change',draw);
+})();
+</script>
+<script>
+(function(){
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* --- reveal on scroll --- */
+const tg=[...document.querySelectorAll('section h2, section .narrow > p, section figure, .cards, .tasks, .stats, .take, ol.steps, .tbl')];
+if(!RM&&'IntersectionObserver' in window){
+  tg.forEach(e=>e.classList.add('reveal'));
+  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{rootMargin:'0px 0px -8% 0px'});
+  tg.forEach(e=>io.observe(e));
+}
+/* --- count-up stats --- */
+const vs=[...document.querySelectorAll('.stat .v')];
+if(!RM&&'IntersectionObserver' in window){
+  const io2=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;io2.unobserve(e.target);
+    const el=e.target,node=[...el.childNodes].find(n=>n.nodeType===3&&/\d/.test(n.textContent));if(!node)return;
+    const fin=node.textContent,num=parseFloat(fin.replace(/[^\d.]/g,'')),dec=(fin.split('.')[1]||'').replace(/\D/g,'').length,pre=fin.match(/^[^\d]*/)[0];
+    const t0=performance.now(),D=1100;
+    (function f(t){const k=Math.min(1,(t-t0)/D),v=num*(1-Math.pow(1-k,3));node.textContent=pre+v.toFixed(dec);if(k<1)requestAnimationFrame(f);else node.textContent=fin})(t0);
+  }),{threshold:.6});
+  vs.forEach(v=>io2.observe(v));
+}
+/* --- ablation slider autoplay --- */
+const dose=document.getElementById('stdose');
+if(dose&&!RM&&'IntersectionObserver' in window){
+  let stop=false;['pointerdown','keydown','touchstart'].forEach(ev=>dose.addEventListener(ev,()=>stop=true));
+  document.getElementById('sttabs')?.addEventListener('click',()=>stop=true);
+  const io3=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;io3.disconnect();
+    let v=100;const tick=()=>{if(stop)return;v-=5;dose.value=Math.max(0,v);dose.dispatchEvent(new Event('input'));if(v>0)setTimeout(tick,180)};setTimeout(tick,500)}),{threshold:.7});
+  io3.observe(dose);
+}
+/* --- ECG monitor --- */
+const cv=document.getElementById('moncv');if(!cv)return;
+fetch('static/explorer/a/2278.json').then(r=>r.json()).then(a=>{
+  const x=a.ex[0],w=x.w,act=x.act,n=w.length,mx=Math.max(...act)||1,ctx=cv.getContext('2d');
+  let W,H,dpr;
+  function size(){dpr=window.devicePixelRatio||1;W=cv.clientWidth;H=cv.clientHeight;cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}
+  size();addEventListener('resize',()=>{size();if(RM)drawUpTo(n)});
+  const X=i=>i/(n-1)*W,Y=v=>H/2-v/127*(H/2-6);
+  const on=i=>act[Math.min(99,Math.floor(i/12.5))]>0;
+  function grid(){ctx.fillStyle='#0f1412';ctx.fillRect(0,0,W,H);ctx.strokeStyle='rgba(120,180,150,.12)';ctx.lineWidth=1;
+    for(let s=0;s<=10;s++){const gx=X(s*125);ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,H);ctx.stroke()}
+    for(let r=1;r<4;r++){const gy=H*r/4;ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(W,gy);ctx.stroke()}}
+  function seg(a,b){ // draw samples a..b
+    for(let i=Math.max(1,a);i<=b;i++){const f=on(i),p=act[Math.min(99,Math.floor(i/12.5))]/mx;
+      if(f){ctx.fillStyle=`rgba(255,77,77,${.06+.12*p})`;ctx.fillRect(X(i-1),0,X(i)-X(i-1)+.5,H)}
+      ctx.strokeStyle=f?'#ff4d4d':'#5fe0a0';ctx.lineWidth=f?2.2:1.4;ctx.beginPath();ctx.moveTo(X(i-1),Y(w[i-1]));ctx.lineTo(X(i),Y(w[i]));ctx.stroke()}}
+  function drawUpTo(k){grid();seg(1,k)}
+  if(RM){drawUpTo(n-1);return}
+  grid();const SPS=125,GAP=Math.round(n*0.04),t0=performance.now();let done=1;
+  function frame(){const target=1+Math.floor((performance.now()-t0)/1000*SPS);let k=0;
+    while(done<target&&k<n){const i=done%n;done++;k++;if(i===0)continue;
+      const e0=X(i),e1=X(Math.min(n-1,i+GAP));ctx.fillStyle='#0f1412';ctx.fillRect(e0,0,e1-e0+1,H);seg(i,i)}
+    requestAnimationFrame(frame)}
+  requestAnimationFrame(frame);
+}).catch(()=>{document.getElementById('monitor').style.display='none'});
 })();
 </script>
 </body>
