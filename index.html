@@ -171,6 +171,7 @@ footer a{color:var(--muted)}
 .lrho{font-size:15px;margin-top:4px;min-height:1.5em}
 .lrho b{font-size:22px;color:var(--accent)}
 @media (max-width:760px){.llmgrid{grid-template-columns:minmax(0,1fr)}}
+#rhosvg{display:block;width:100%;height:auto}#rhosvg text{fill:var(--muted);font:11px Inter,sans-serif}
 </style>
 </head>
 <body>
@@ -324,8 +325,12 @@ footer a{color:var(--muted)}
     <div class="seg" id="ltabs" role="tablist" aria-label="Atom" style="margin-top:8px"></div>
     <figcaption>Four atoms from the 1,000-atom run, from strong (ρ 0.93) to weak (ρ 0.30); the median atom is ρ 0.65. Measured activation is scaled to each atom’s maximum. Crops are high-, median- and low-activation tokens; low crops (measured 0) often overlap at the origin.</figcaption>
   </figure>
-  <div class="narrow" style="margin-top:8px;max-width:520px">
-    <figure><img src="static/llm_rho.png" alt="Histogram of per-atom Spearman correlation between LLM-predicted and measured held-out activations"><figcaption>Per-atom Spearman ρ, 1,000 atoms.</figcaption></figure>
+  <div class="narrow" style="margin-top:8px;max-width:620px">
+    <figure class="widget" id="rhow">
+      <svg id="rhosvg" role="img" aria-label="Animated histogram of per-atom Spearman correlation for 1,000 atoms"></svg>
+      <div class="readout" id="rhoread">&nbsp;</div>
+      <figcaption>Per-atom Spearman ρ between LLM-predicted and measured held-out activations, 1,000 atoms. Hover a bar for its count. <a href="static/llm_rho.png">Static figure</a></figcaption>
+    </figure>
   </div>
 
   <div class="narrow">
@@ -613,6 +618,44 @@ fetch('static/anim.json').then(r=>r.json()).then(A=>{
   const io=new IntersectionObserver(es=>{if(es[0].isIntersecting){io.disconnect();play(0)}},{threshold:.3});io.observe(svg);
 })();
 }).catch(()=>{['prw','llmw'].forEach(i=>{const e=document.getElementById(i);if(e)e.style.display='none'})});
+})();
+</script>
+<script>
+(function(){
+const svg=document.getElementById('rhosvg');if(!svg)return;
+fetch('static/explorer/index.json').then(r=>r.json()).then(I=>{
+  const R=I.map(a=>a.rho).filter(v=>v!=null),N=R.length,NS='http://www.w3.org/2000/svg';
+  const el=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e};
+  const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const lo=-0.85,hi=1.0,bw=0.05,nb=Math.round((hi-lo)/bw),cnt=new Array(nb).fill(0);
+  const bin=v=>Math.max(0,Math.min(nb-1,Math.floor((v-lo)/bw)));
+  R.forEach(v=>cnt[bin(v)]++);const ymax=Math.ceil(Math.max(...cnt)/20)*20;
+  const W=560,H=250,ml=40,mr=10,mt=14,mb=36;svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const X=v=>ml+(v-lo)/(hi-lo)*(W-ml-mr),Y=c=>mt+(1-c/ymax)*(H-mt-mb);
+  const sorted=[...R].sort((a,b)=>a-b),med=sorted[Math.floor(N/2)],gt=R.filter(v=>v>0.3).length/N,fail=R.filter(v=>v<=0).length/N;
+  // axes
+  for(let c=0;c<=ymax;c+=ymax/4){el('line',{x1:ml,x2:W-mr,y1:Y(c),y2:Y(c),stroke:css('--line')},svg);const t=el('text',{x:ml-6,y:Y(c)+4,'text-anchor':'end'},svg);t.textContent=c}
+  for(let v=-0.75;v<=1.001;v+=0.25){const t=el('text',{x:X(v),y:H-mb+16,'text-anchor':'middle'},svg);t.textContent=v.toFixed(2).replace('-','−').replace(/^0\./,'0.')}
+  const xl=el('text',{x:(W+ml)/2,y:H-3,'text-anchor':'middle'},svg);xl.textContent='Spearman ρ (LLM-predicted vs measured)';
+  const yl=el('text',{x:0,y:0,transform:`translate(11,${(H-mb+mt)/2}) rotate(-90)`,'text-anchor':'middle'},svg);yl.textContent='atoms';
+  const z=el('line',{x1:X(0),x2:X(0),y1:mt,y2:H-mb,stroke:css('--muted'),'stroke-dasharray':'2 3'},svg);
+  const bars=cnt.map((c,k)=>{const x0=X(lo+k*bw)+.6,w=X(lo+(k+1)*bw)-X(lo+k*bw)-1.2,v0=lo+k*bw;
+    const r=el('rect',{x:x0,y:Y(0),width:w,height:0,rx:1.5,fill:v0>=0.3-1e-9?css('--accent'):v0>=0-1e-9?'#e3a0a6':css('--muted')},svg);
+    const ti=el('title',{},r);ti.textContent=`ρ ${v0.toFixed(2)} to ${(v0+bw).toFixed(2)}: ${c} atoms`;return r});
+  const medL=el('line',{x1:X(med),x2:X(med),y1:mt,y2:H-mb,stroke:css('--fg'),'stroke-width':1.5,opacity:0},svg);
+  const medT=el('text',{x:X(med)-5,y:mt+10,'text-anchor':'end',opacity:0},svg);medT.textContent=`median ${med.toFixed(2)}`;medT.style.fill=css('--fg');medT.style.fontWeight='600';
+  const rd=document.getElementById('rhoread'),cur=new Array(nb).fill(0);
+  const order=R.map((v,i)=>i).sort(()=>Math.random()-.5);
+  function set(k){const c=cur[k];bars[k].setAttribute('y',Y(c));bars[k].setAttribute('height',Y(0)-Y(c))}
+  function run(){let i=0;const t0=performance.now(),D=3200;
+    (function f(){const k=Math.min(N,Math.round((performance.now()-t0)/D*N));
+      for(;i<k;i++){const b=bin(R[order[i]]);cur[b]++;set(b)}
+      rd.innerHTML=`<b>${i}</b> / ${N} atoms scored`;
+      if(i<N)requestAnimationFrame(f);else{
+        medL.style.transition=medT.style.transition='opacity .6s';medL.setAttribute('opacity',1);medT.setAttribute('opacity',1);
+        rd.innerHTML=`Median ρ <b>${med.toFixed(2)}</b> · <b>${(gt*100).toFixed(1)}%</b> of atoms above 0.3 · <b>${(fail*100).toFixed(1)}%</b> fail (ρ ≤ 0)`}})()}
+  const io=new IntersectionObserver(es=>{if(es[0].isIntersecting){io.disconnect();run()}},{threshold:.4});io.observe(svg);
+}).catch(()=>{document.getElementById('rhow').style.display='none'});
 })();
 </script>
 </body>
