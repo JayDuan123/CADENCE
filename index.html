@@ -324,9 +324,8 @@ footer a{color:var(--muted)}
     <div class="seg" id="ltabs" role="tablist" aria-label="Atom" style="margin-top:8px"></div>
     <figcaption>Four atoms from the 1,000-atom run, from strong (ρ 0.93) to weak (ρ 0.30); the median atom is ρ 0.65. Measured activation is scaled to each atom’s maximum. Crops are high-, median- and low-activation tokens; low crops (measured 0) often overlap at the origin.</figcaption>
   </figure>
-  <div class="two" style="margin-top:8px;grid-template-columns:minmax(0,2fr) minmax(0,3fr)">
+  <div class="narrow" style="margin-top:8px;max-width:520px">
     <figure><img src="static/llm_rho.png" alt="Histogram of per-atom Spearman correlation between LLM-predicted and measured held-out activations"><figcaption>Per-atom Spearman ρ, 1,000 atoms.</figcaption></figure>
-    <figure><img src="static/llm_atoms.png" alt="Three atoms with their top-activating ECG, red where the atom fires, and the LLM-written name and description"><figcaption>Three atoms: top-activating ECG (red where the atom fires) and the LLM’s name and description.</figcaption></figure>
   </div>
 
   <div class="narrow">
