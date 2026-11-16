@@ -143,7 +143,7 @@ footer a{color:var(--muted)}
   </div>
   <a class="monitor" id="monitor" href="explorer.html#atom=2278" aria-label="Animated ECG: atom 2278 firing on lead aVF. Open in the Atom Explorer">
     <canvas id="moncv" aria-hidden="true"></canvas>
-    <div class="monlab"><span class="dot"></span><span id="montxt">Atom #2278 · “aVF deep QRS nadir” firing on a held-out MIMIC-IV-ECG</span><span class="go">Open in Explorer →</span></div>
+    <div class="monlab"><span class="dot"></span><span id="montxt">Cardiac atoms firing on held-out MIMIC-IV-ECG recordings</span><span class="go">Open in Explorer →</span></div>
   </a>
 </header>
 
@@ -398,31 +398,35 @@ if(dose&&!RM&&'IntersectionObserver' in window){
     let v=100;const tick=()=>{if(stop)return;v-=5;dose.value=Math.max(0,v);dose.dispatchEvent(new Event('input'));if(v>0)setTimeout(tick,180)};setTimeout(tick,500)}),{threshold:.7});
   io3.observe(dose);
 }
-/* --- ECG monitor --- */
+/* --- ECG monitor: rotate through several atoms, one 10 s sweep each --- */
 const cv=document.getElementById('moncv');if(!cv)return;
-fetch('static/explorer/a/2278.json').then(r=>r.json()).then(a=>{
-  const x=a.ex[0],w=x.w,act=x.act,n=w.length,mx=Math.max(...act)||1,ctx=cv.getContext('2d');
-  let W,H,dpr;
-  function size(){dpr=window.devicePixelRatio||1;W=cv.clientWidth;H=cv.clientHeight;cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}
-  size();addEventListener('resize',()=>{size();if(RM)drawUpTo(n)});
+const IDS=[210,82,2278,4604,5336],mon=document.getElementById('monitor'),txt=document.getElementById('montxt');
+Promise.all(IDS.map(id=>fetch(`static/explorer/a/${id}.json`).then(r=>r.json()))).then(As=>{
+  const ctx=cv.getContext('2d');let W,H,cur=0;
+  function size(){const d=window.devicePixelRatio||1;W=cv.clientWidth;H=cv.clientHeight;cv.width=W*d;cv.height=H*d;ctx.setTransform(d,0,0,d,0,0)}
+  function data(k){const a=As[k],x=a.ex[0];return{a,w:x.w,act:x.act,lead:x.lead,mx:Math.max(...x.act)||1}}
+  let D=data(0);const n=D.w.length;
   const X=i=>i/(n-1)*W,Y=v=>H/2-v/127*(H/2-6);
-  const on=i=>act[Math.min(99,Math.floor(i/12.5))]>0;
+  function label(k){const a=As[k];txt.textContent=`${k+1}/${As.length} · Atom #${a.id} · “${a.name}” · lead ${D.lead} · LLM ρ ${a.rho==null?'–':a.rho.toFixed(2)}`;
+    mon.href=`explorer.html#atom=${a.id}`;mon.setAttribute('aria-label',`Animated ECG: atom ${a.id}, ${a.name}. Open in the Atom Explorer`)}
   function grid(){ctx.fillStyle='#0f1412';ctx.fillRect(0,0,W,H);ctx.strokeStyle='rgba(120,180,150,.12)';ctx.lineWidth=1;
     for(let s=0;s<=10;s++){const gx=X(s*125);ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,H);ctx.stroke()}
     for(let r=1;r<4;r++){const gy=H*r/4;ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(W,gy);ctx.stroke()}}
-  function seg(a,b){ // draw samples a..b
-    for(let i=Math.max(1,a);i<=b;i++){const f=on(i),p=act[Math.min(99,Math.floor(i/12.5))]/mx;
-      if(f){ctx.fillStyle=`rgba(255,77,77,${.06+.12*p})`;ctx.fillRect(X(i-1),0,X(i)-X(i-1)+.5,H)}
+  function seg(a,b){const{w,act,mx}=D;
+    for(let i=Math.max(1,a);i<=b;i++){const v=act[Math.min(99,Math.floor(i/12.5))],f=v>0;
+      if(f){ctx.fillStyle=`rgba(255,77,77,${.06+.12*v/mx})`;ctx.fillRect(X(i-1),0,X(i)-X(i-1)+.5,H)}
       ctx.strokeStyle=f?'#ff4d4d':'#5fe0a0';ctx.lineWidth=f?2.2:1.4;ctx.beginPath();ctx.moveTo(X(i-1),Y(w[i-1]));ctx.lineTo(X(i),Y(w[i]));ctx.stroke()}}
-  function drawUpTo(k){grid();seg(1,k)}
-  if(RM){drawUpTo(n-1);return}
+  size();label(0);
+  if(RM){grid();seg(1,n-1);let k=0;mon.addEventListener('mouseenter',()=>{k=(k+1)%As.length;cur=k;D=data(k);label(k);grid();seg(1,n-1)});addEventListener('resize',()=>{size();grid();seg(1,n-1)});return}
+  addEventListener('resize',()=>{size();grid()});
   grid();const SPS=125,GAP=Math.round(n*0.04),t0=performance.now();let done=1;
   function frame(){const target=1+Math.floor((performance.now()-t0)/1000*SPS);let k=0;
-    while(done<target&&k<n){const i=done%n;done++;k++;if(i===0)continue;
+    while(done<target&&k<n){const i=done%n;done++;k++;
+      if(i===0){cur=(cur+1)%As.length;D=data(cur);label(cur);continue}
       const e0=X(i),e1=X(Math.min(n-1,i+GAP));ctx.fillStyle='#0f1412';ctx.fillRect(e0,0,e1-e0+1,H);seg(i,i)}
     requestAnimationFrame(frame)}
   requestAnimationFrame(frame);
-}).catch(()=>{document.getElementById('monitor').style.display='none'});
+}).catch(()=>{mon.style.display='none'});
 })();
 </script>
 </body>
