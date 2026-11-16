@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CADENCE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap">
+<meta name="description" content="CADENCE: a cardiac atom dictionary for interpretable neural concept extraction from ECG foundation models.">
+<style>
+*{box-sizing:border-box}body{margin:0}img{max-width:100%}
+
+:root{
+  --bg:#ffffff; --bg-soft:#faf5f5; --fg:#1d1a24; --fg-2:#4a4556; --muted:#77718a;
+  --line:#ece2e2; --accent:#b4232f; --accent-soft:#fbe9ea; --accent-ink:#951c27;
+  --btn:#26222e; --btn-fg:#ffffff; --code:#f3f1f7; --good:#1f7a55;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141218; --bg-soft:#1c1922; --fg:#ece9f2; --fg-2:#c4bfd0; --muted:#958fa5;
+  --line:#2e2a37; --accent:#f07a84; --accent-soft:#3a1c20; --accent-ink:#f59aa2;
+  --btn:#ece9f2; --btn-fg:#141218; --code:#1e1b25; --good:#5cc79a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141218; --bg-soft:#1c1922; --fg:#ece9f2; --fg-2:#c4bfd0; --muted:#958fa5;
+  --line:#2e2a37; --accent:#f07a84; --accent-soft:#3a1c20; --accent-ink:#f59aa2;
+  --btn:#ece9f2; --btn-fg:#141218; --code:#1e1b25; --good:#5cc79a; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 Inter,"Helvetica Neue",Helvetica,Arial,sans-serif;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:960px;margin:0 auto}
+.narrow{max-width:760px;margin:0 auto}
+header{text-align:center;padding-block:56px 28px}
+.venue{display:inline-block;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-ink);
+  background:var(--accent-soft);border-radius:99px;padding:3px 12px;margin-bottom:18px}
+h1{font-size:clamp(28px,4.4vw,44px);line-height:1.18;font-weight:700;margin:0 0 6px;text-wrap:balance;letter-spacing:-.01em}
+h1 .name{color:var(--accent)}
+.sub{font-size:clamp(17px,2.2vw,21px);color:var(--fg-2);margin:0 auto 22px;max-width:760px;text-wrap:balance}
+.authors{font-size:17px;color:var(--fg)}
+.authors sup{color:var(--accent);font-size:.7em}
+.authors a{color:var(--accent-ink);text-decoration:none}
+.aff{color:var(--muted);font-size:15px;margin-top:2px}
+.btns{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:22px}
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--btn);color:var(--btn-fg);text-decoration:none;
+  border-radius:99px;padding:8px 18px;font-size:15px;font-weight:500}
+.btn svg{width:17px;height:17px;fill:currentColor}
+.btn.soon{opacity:.45;cursor:default}
+.btn small{font-size:12px;opacity:.8}
+figure{margin:0}
+figure img{display:block;width:100%;height:auto;border-radius:8px}
+figcaption{font-size:14.5px;color:var(--fg-2);margin-top:10px;line-height:1.55}
+figcaption b{color:var(--fg)}
+.teaser{margin-top:8px}
+section{padding-block:40px;border-top:1px solid var(--line)}
+h2{font-size:28px;font-weight:700;text-align:center;margin:0 0 22px;letter-spacing:-.01em}
+h3{font-size:19px;font-weight:600;margin:30px 0 8px}
+p{margin:0 0 14px}
+.abstract p{text-align:justify;hyphens:auto}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0}
+.card{background:var(--bg-soft);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.card h4{margin:0 0 6px;font-size:16px;font-weight:600}
+.card p{margin:0;font-size:15px;color:var(--fg-2)}
+.tasks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0 8px}
+.task{border:1px solid var(--line);border-radius:10px;padding:14px}
+.task .k{font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--accent-ink);font-weight:600}
+.task .t{font-weight:600;margin:4px 0 4px}
+.task p{font-size:14px;color:var(--fg-2);margin:0}
+ol.steps{counter-reset:s;list-style:none;padding:0;margin:16px 0}
+ol.steps li{counter-increment:s;position:relative;padding-left:44px;margin-bottom:14px}
+ol.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:28px;height:28px;border-radius:50%;
+  background:var(--accent);color:var(--bg);font-weight:600;font-size:14px;display:grid;place-items:center}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:22px 0}
+.stat{background:var(--bg-soft);border-radius:10px;padding:16px 14px;text-align:center}
+.stat .v{font-size:30px;font-weight:700;color:var(--accent);line-height:1.1}
+.stat .v span{font-size:15px;color:var(--muted);font-weight:500}
+.stat .l{font-size:13.5px;color:var(--fg-2);margin-top:6px;line-height:1.4}
+.take{border-left:3px solid var(--accent);background:var(--accent-soft);padding:12px 16px;border-radius:0 8px 8px 0;margin:16px 0 4px}
+.take b{color:var(--accent-ink)}
+.tbl{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14.5px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{font-weight:600;color:var(--fg-2);font-size:13px;border-bottom:1.5px solid var(--fg-2)}
+tr.grp td{background:var(--bg-soft);color:var(--muted);font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;text-align:left;padding:4px 10px}
+tr.ours td{font-weight:600;color:var(--accent-ink)}
+td.best{font-weight:700}
+.note{font-size:13.5px;color:var(--muted)}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:start}
+pre{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:16px;overflow-x:auto;
+  font:13.5px/1.55 "JetBrains Mono",ui-monospace,Menlo,monospace;color:var(--fg)}
+.copy{float:right;font:12px Inter,sans-serif;background:var(--btn);color:var(--btn-fg);border:0;border-radius:6px;padding:4px 10px;cursor:pointer}
+footer{border-top:1px solid var(--line);padding-block:28px 40px;text-align:center;font-size:13.5px;color:var(--muted)}
+footer a{color:var(--muted)}
+@media (max-width:760px){
+  .cards,.two{grid-template-columns:minmax(0,1fr)}
+  .tasks,.stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header>
+  <div class="venue">Under review</div>
+  <h1><span class="name">CADENCE</span>: A Cardiac Atom Dictionary</h1>
+  <p class="sub">for Interpretable Neural Concept Extraction from ECG Foundation Models</p>
+  <div class="authors">Yixuan Duan<sup>1</sup>, Arjun Naik<sup>1</sup>, Sadeer Al-Kindi<sup>2</sup>, Wei Qiu<sup>1,*</sup></div>
+  <div class="aff"><sup>1</sup>Rice University &nbsp;&nbsp; <sup>2</sup>Houston Methodist Hospital</div>
+  <div class="aff" style="font-size:13.5px"><sup>*</sup>Corresponding author</div>
+  <div class="btns">
+    <a class="btn soon" aria-disabled="true"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6V2zm8 1.5V8h4.5L14 3.5zM8.5 12h9v1.5h-9V12zm0 3.5h9V17h-9v-1.5z"/></svg>Paper <small>soon</small></a>
+    <a class="btn" href="https://github.com/JayDuan123/2027-KDD-Ai4s-track-CADENCE" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>Code</a>
+  </div>
+</header>
+
+<figure class="teaser">
+  <img src="static/pipeline.png" alt="CADENCE overview: a 12-lead MIMIC-IV-ECG recording is encoded by the frozen six-layer CSFM foundation model into patch tokens; a BatchTopK sparse autoencoder decomposes the representation into sparse cardiac atoms linked to clinical concepts, which support concept relationship analysis, concept-based prediction and LLM-assisted annotation">
+  <figcaption><b>Overview.</b> (1) 12-lead, 10&nbsp;s ECGs from MIMIC-IV-ECG. (2) The frozen six-layer ECG foundation model (CSFM) encodes each ECG into patch tokens. (3) A BatchTopK sparse autoencoder decomposes the representation into a few active <em>cardiac atoms</em> and reconstructs it. (4) Atoms are matched to clinical concepts. The atoms then support concept relationship analysis, concept-based prediction, and LLM-assisted annotation that is validated on held-out ECGs.</figcaption>
+</figure>
+</div>
+
+<section class="abstract"><div class="narrow">
+  <h2>Abstract</h2>
+  <p>Foundation models for 12-lead electrocardiograms (ECGs) demonstrate strong transferability across clinical tasks, yet the physiological knowledge encoded in their representations remains opaque, limiting their interpretability, auditability, and scientific utility. We present <b>CADENCE</b> (<b>C</b>ardiac <b>A</b>tom <b>D</b>ictionary for <b>E</b>xplainable <b>N</b>eural <b>C</b>oncept <b>E</b>xtraction), a framework that decomposes the latent representations of an ECG foundation model into a human-interpretable and queryable dictionary of physiological concepts. Using a BatchTopK sparse autoencoder, CADENCE factorizes Layer-6 embeddings extracted from more than nine million ECG tokens into 8,192 sparse cardiac <em>atoms</em>. Compared with individual dimensions of the original dense embedding space, the learned atoms align substantially better with both clinical phenotypes and waveform morphology. CADENCE recovers a broad spectrum of cardiological concepts, including arrhythmias, conduction abnormalities, infarction and repolarization patterns, chamber and electrical-axis findings, and lead- and beat-phase-specific waveform primitives.</p>
+  <p>At Layer 6, the best-performing atoms achieve mean AUROCs of 0.88 for clinical phenotypes and 0.90 for waveform morphology, compared with 0.78 and 0.83, respectively, for the best dense embedding dimensions. Sparse atom-based probes match or outperform dense embedding probes for phenotype, morphology, and age prediction while attributing each prediction to a small set of interpretable atoms. For phenotype prediction, the test AUROC improves from 0.93 in the dense embedding space to 0.95 in the sparse atom space. Moreover, atom-space geometry recovers physiologically coherent relationships, while targeted ablation of phenotype-associated atoms produces selective changes in frozen downstream model outputs. An automated large language model pipeline generates atom descriptions and quantitatively validates their descriptions by predicting held-out atom activations. Across independent external ECG datasets, CADENCE recovers overlapping physiological concepts and maintains consistent phenotype-prediction performance. Together, these findings establish CADENCE as a scalable framework for discovering and auditing the physiological knowledge encoded by ECG foundation models, providing a transparent foundation for scientific analysis and trustworthy clinical AI.</p>
+</div></section>
+
+<section><div class="narrow">
+  <h2>Why open up an ECG foundation model</h2>
+  <p>Self-supervised ECG foundation models transfer to arrhythmia detection, risk prediction and screening from a single frozen backbone. A practitioner can see that such a model predicts left bundle branch block, but not which physiological evidence the prediction rests on.</p>
+  <div class="cards">
+    <div class="card"><h4>Neurons are polysemantic</h4><p>A network packs more features than it has dimensions into <em>superposition</em>, so each embedding dimension responds to several unrelated features.</p></div>
+    <div class="card"><h4>Saliency and probing fall short</h4><p>Saliency shows <em>where</em> one prediction looks, not which reusable concepts the model holds; probing needs a label for every concept and cannot find unnamed ones.</p></div>
+    <div class="card"><h4>SAEs work elsewhere</h4><p>Sparse autoencoders have exposed interpretable features in language, protein, single-cell and pathology models, but not yet in physiological time-series models.</p></div>
+    <div class="card"><h4>ECG features have structure</h4><p>An ECG feature has a lead (where) and a beat phase (when), so atoms can be checked directly on the waveform.</p></div>
+  </div>
+  <div class="take"><b>Key idea.</b> Train a sparse autoencoder on the frozen model’s patch-token activations. Each resulting atom is one sparse direction that can be named, located on the ECG trace, related to other concepts, used for prediction and described automatically.</div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>How CADENCE works</h2>
+  <div class="narrow">
+  <ol class="steps">
+    <li><b>Backbone.</b> CSFM, a six-layer transformer ECG foundation model (<i>d</i>&nbsp;=&nbsp;768), splits each lead into 100&nbsp;ms patches: 12 leads × 100 patches = 1,200 tokens per ECG. The backbone stays frozen.</li>
+    <li><b>Dictionary.</b> A BatchTopK sparse autoencoder with <i>F</i>&nbsp;=&nbsp;8,192 atoms and <i>k</i>&nbsp;=&nbsp;128 is trained on about 9M tokens from ~150k MIMIC-IV-ECG recordings.</li>
+    <li><b>Concepts.</b> Each atom’s per-ECG activation (max over tokens) is scored against diagnostic phenotypes, interval measurements and morphology concepts by AUROC.</li>
+    <li><b>Analyses.</b> The atoms are used to localize concepts on the trace, relate concepts through atom-space fingerprints, build sparse probes and ablate single atoms.</li>
+    <li><b>LLM annotation.</b> An LLM describes each atom from its top-activating ECG crops and lead and beat-phase geometry, and the description is validated by predicting activations on held-out ECGs.</li>
+  </ol>
+  </div>
+  <div class="tasks">
+    <div class="task"><div class="k">Training</div><div class="t">MIMIC-IV-ECG</div><p>150k ECGs for the SAE, ~15k held out for all analyses.</p></div>
+    <div class="task"><div class="k">External</div><div class="t">PTB-XL</div><p>21,799 cardiologist-labeled ECGs; frozen SAEs, no retraining.</p></div>
+    <div class="task"><div class="k">Dictionary</div><div class="t">8,192 atoms</div><p>BatchTopK, <i>k</i> = 128, one SAE per layer.</p></div>
+    <div class="task"><div class="k">Concepts</div><div class="t">Three levels</div><p>Rhythm, phenotype and sub-beat morphology.</p></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Results</h2>
+  <div class="stats">
+    <div class="stat"><div class="v">0.88</div><div class="l">best-atom phenotype AUROC, L6<br>(best dense dimension 0.78)</div></div>
+    <div class="stat"><div class="v">0.95</div><div class="l">sparse atom probe, phenotype<br>(dense embedding 0.93)</div></div>
+    <div class="stat"><div class="v">0.65</div><div class="l">median Spearman ρ of LLM<br>held-out predictions</div></div>
+    <div class="stat"><div class="v">0.83</div><div class="l">PTB-XL best-atom AUROC<br>(best dense dimension 0.72)</div></div>
+  </div>
+
+  <div class="narrow">
+  <h3>Atoms beat raw neurons, and more so with depth</h3>
+  <p>Concepts become more decodable with depth: best-atom AUROC rises from Layer 1 to Layer 6 for phenotype (0.73 → 0.88), morphology (0.72 → 0.90) and age (0.71 → 0.83). For phenotype and morphology the best atom beats the best dense dimension at every layer. Sparse atom probes match or exceed dense-embedding probes at every layer, with the largest gain in shallow layers (phenotype 0.843 vs. 0.805 at Layer 1).</p>
+  </div>
+  <figure>
+    <img src="static/layers.png" alt="Best-atom and linear-probe AUROC across six CSFM layers for SAE atoms vs. dense dimensions, and two atoms highlighted on MIMIC and PTB-XL ECGs">
+    <figcaption><b>What the dictionary encodes, how well it predicts, and where it fires.</b> (a) Best single-atom AUROC and (b) linear-probe test AUROC across layers; solid lines are SAE atoms, dotted lines CSFM dense. (c) A PVC atom fires on the single premature beat; (d) an atrial-fibrillation atom fires on the fibrillatory baseline. Each atom is shown on a MIMIC (top) and an external PTB-XL (bottom) record.</figcaption>
+  </figure>
+
+  <div class="narrow">
+  <h3>A layered vocabulary of cardiac concepts</h3>
+  <div class="cards">
+    <div class="card"><h4>Rhythm (multi-beat)</h4><p>A sinus-bradycardia atom (AUROC 0.98) fires on the long baseline between beats and stays silent on the QRS–T complexes.</p></div>
+    <div class="card"><h4>Phenotype (single event)</h4><p>A PVC atom (AUROC 0.90) fires on one premature, wide QRS and its pause, and the same holds on PTB-XL.</p></div>
+    <div class="card"><h4>Morphology (sub-beat)</h4><p>Atoms pick out one segment of every beat in one lead, such as a prolonged PR segment or an ST-segment primitive.</p></div>
+    <div class="card"><h4>Across datasets</h4><p>Atoms trained on MIMIC fire on the same waveform events in PTB-XL, a cohort from another country and acquisition system.</p></div>
+  </div>
+  </div>
+
+  <div class="two narrow" style="margin-top:18px">
+    <div>
+      <h3 style="margin-top:0">Concept relationships without supervision</h3>
+      <p>Cosine similarity of concept fingerprints in atom space groups LBBB, RBBB, IVCD, paced rhythm and wide QRS together (0.80–0.87), with prolonged QTc next to them, since a wider QRS lengthens the QT. LBBB and RBBB are the least similar pair in this group (0.35), in line with their opposite ventricular activation. Atrial fibrillation and flutter form a separate group (0.81). The same structure appears on PTB-XL.</p>
+    </div>
+    <figure><img src="static/relations.png" alt="Concept-by-concept cosine similarity heatmap of atom-space prototype fingerprints"><figcaption>Concept–concept cosine similarity of prototype fingerprints (stars: known cardiology pairs).</figcaption></figure>
+  </div>
+
+  <div class="narrow">
+  <h3>One atom steers the frozen readout</h3>
+  <p>For four targets, a linear predictor is trained on the frozen CSFM Layer-6 embedding, which never sees the SAE. Scaling the single most-attributed atom from full to zero lowers the target logit by 0.62 (LBBB), 0.40 (wide QRS), 0.36 (age) and 0.27 (one-year mortality). A frequency-matched random atom and an atom for a different concept leave the logit unchanged.</p>
+  </div>
+  <div class="two" style="margin-top:8px">
+    <figure><img src="static/steer.png" alt="Change in target logit as one atom is ablated, for LBBB, wide QRS, age and one-year mortality, with random and wrong-atom controls flat at zero"><figcaption><b>Ablation audit.</b> Target atom (orange) vs. random (green) and wrong-concept (blue) atoms, <i>N</i> = 80 positives per target.</figcaption></figure>
+    <figure><img src="static/probe.png" alt="Top five atoms of the PVC and paced-rhythm probes with their most over-represented report statements"><figcaption><b>Sparse probing.</b> The PVC (AUROC 0.947) and paced-rhythm (0.951) predictions decomposed into their five highest-weight atoms, each labeled by its most over-represented report statement.</figcaption></figure>
+  </div>
+  <div class="narrow">
+  <div class="take"><b>Takeaway.</b> Predictions decompose into a few named atoms. The top PVC atom is about 90× over-represented among ECGs read as “frequent premature ventricular contractions”, and the top RBBB atoms localize to the terminal QRS in V1/V2, where RBBB is diagnosed.</div>
+
+  <h3>LLM descriptions that predict activations</h3>
+  <p>For 1,000 random atoms out of the 2,991 interpretable ones, an LLM writes a description from activation evidence alone, with no report text. From that description alone it then predicts activations on held-out ECGs. Predicted and measured activations reach a median Spearman ρ of 0.65; 92% of atoms exceed 0.3 and 2% fail (ρ ≤ 0).</p>
+  </div>
+  <div class="two" style="margin-top:8px;grid-template-columns:minmax(0,2fr) minmax(0,3fr)">
+    <figure><img src="static/llm_rho.png" alt="Histogram of per-atom Spearman correlation between LLM-predicted and measured held-out activations"><figcaption>Per-atom Spearman ρ, 1,000 atoms.</figcaption></figure>
+    <figure><img src="static/llm_atoms.png" alt="Three atoms with their top-activating ECG, red where the atom fires, and the LLM-written name and description"><figcaption>Three atoms: top-activating ECG (red where the atom fires) and the LLM’s name and description.</figcaption></figure>
+  </div>
+
+  <div class="narrow">
+  <h3>External validation on PTB-XL</h3>
+  <p>The frozen MIMIC-trained SAEs are applied to PTB-XL without retraining. On the five cardiologist-adjudicated diagnostic superclasses, the mean best-atom AUROC is 0.825 vs. 0.720 for the best dense dimension. Atoms also lead in all five families of 49 automated measurement concepts, about 40 of which were never evaluated during development.</p>
+  </div>
+</div></section>
+
+<section><div class="narrow">
+  <h2>Contributions</h2>
+  <ol class="steps">
+    <li>To our knowledge, the first sparse-autoencoder analysis of a cardiac physiological-signal foundation model, showing that its embeddings can be pulled out of superposition into atoms that align with clinical concepts far better than raw neurons.</li>
+    <li>CADENCE, a BatchTopK sparse autoencoder on the residual stream of an ECG foundation model that yields ~8,000 sparse cardiac atoms that reconstruct the representation faithfully.</li>
+    <li>Sparse atom probes that match or exceed dense-embedding probes while attributing each prediction to a few named atoms, which an automated LLM pipeline describes and validates at scale.</li>
+    <li>An auditable dictionary of physiologically grounded concepts: practitioners can inspect what a representation encodes, decompose predictions into named atoms, and surface confounded or shortcut features.</li>
+  </ol>
+</div></section>
+
+<section><div class="narrow">
+  <h2>BibTeX</h2>
+  <pre id="bib"><button class="copy" type="button" id="copybtn">Copy</button>@article{duan2027cadence,
+  title   = {CADENCE: A Cardiac Atom Dictionary for Interpretable Neural
+             Concept Extraction from ECG Foundation Models},
+  author  = {Duan, Yixuan and Naik, Arjun and Al-Kindi, Sadeer and Qiu, Wei},
+  journal = {Under review},
+  year    = {2027}
+}</pre>
+</div></section>
+
+<footer>
+  Page layout inspired by the <a href="https://nerfies.github.io" target="_blank" rel="noopener">Nerfies</a> academic project page.
+</footer>
+<script>
+document.getElementById('copybtn').addEventListener('click',async e=>{
+  const t=document.getElementById('bib').innerText.replace(/^Copy\s*/,'');
+  try{await navigator.clipboard.writeText(t);e.target.textContent='Copied'}
+  catch(_){const r=document.createRange();r.selectNodeContents(document.getElementById('bib'));const s=getSelection();s.removeAllRanges();s.addRange(r);e.target.textContent='Selected'}
+  setTimeout(()=>e.target.textContent='Copy',1500);
+});
+</script>
+</body>
+</html>
