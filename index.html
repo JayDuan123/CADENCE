@@ -93,6 +93,26 @@ footer a{color:var(--muted)}
   .cards,.two{grid-template-columns:minmax(0,1fr)}
   .tasks,.stats{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+:root{--c-t:#e0894a;--c-r:#5fae84;--c-w:#6a8fc0}
+.widget{background:var(--bg-soft);border:1px solid var(--line);border-radius:10px;padding:14px}
+.widget svg{display:block;width:100%;height:auto;overflow:visible}
+.widget svg text{fill:var(--fg-2);font:12px Inter,sans-serif}
+.relwrap{position:relative}
+.tip{position:absolute;pointer-events:none;background:var(--btn);color:var(--btn-fg);font-size:13px;padding:4px 8px;border-radius:6px;white-space:nowrap;transform:translate(-50%,-120%)}
+.readout{font-size:14px;color:var(--fg-2);margin-top:8px;min-height:2.6em}
+.readout b{color:var(--fg)}
+.seg{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.seg button{font:13px Inter,sans-serif;border:1px solid var(--line);background:var(--bg);color:var(--fg-2);border-radius:99px;padding:4px 12px;cursor:pointer}
+.seg button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.slider{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--fg-2);margin-top:6px}
+.slider input{flex:1;accent-color:var(--accent);direction:rtl}
+.slider b{min-width:3.2em;text-align:right;color:var(--fg);font-variant-numeric:tabular-nums}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--fg-2);margin-top:8px}
+.legend i{display:inline-block;width:12px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.legend code{font:12px "JetBrains Mono",monospace;color:var(--muted)}
+.widget a{color:var(--accent-ink)}
+.cell{cursor:pointer}.lab{cursor:pointer}.lab.on{fill:var(--accent-ink);font-weight:600}
 </style>
 </head>
 <body>
@@ -187,7 +207,11 @@ footer a{color:var(--muted)}
       <h3 style="margin-top:0">Concept relationships without supervision</h3>
       <p>Cosine similarity of concept fingerprints in atom space groups LBBB, RBBB, IVCD, paced rhythm and wide QRS together (0.80–0.87), with prolonged QTc next to them, since a wider QRS lengthens the QT. LBBB and RBBB are the least similar pair in this group (0.35), in line with their opposite ventricular activation. Atrial fibrillation and flutter form a separate group (0.81). The same structure appears on PTB-XL.</p>
     </div>
-    <figure><img src="static/relations.png" alt="Concept-by-concept cosine similarity heatmap of atom-space prototype fingerprints"><figcaption>Concept–concept cosine similarity of prototype fingerprints (stars: known cardiology pairs).</figcaption></figure>
+    <figure class="widget" id="relw">
+      <div class="relwrap"><svg id="relsvg" role="img" aria-label="Interactive concept-by-concept cosine similarity heatmap"></svg><div class="tip" id="reltip" hidden></div></div>
+      <div class="readout" id="relread">Hover a cell for its value; click a concept to rank its neighbours.</div>
+      <figcaption>Concept–concept cosine similarity of prototype fingerprints (stars: known cardiology pairs). <a href="static/relations.png">Static figure</a></figcaption>
+    </figure>
   </div>
 
   <div class="narrow">
@@ -195,7 +219,14 @@ footer a{color:var(--muted)}
   <p>For four targets, a linear predictor is trained on the frozen CSFM Layer-6 embedding, which never sees the SAE. Scaling the single most-attributed atom from full to zero lowers the target logit by 0.62 (LBBB), 0.40 (wide QRS), 0.36 (age) and 0.27 (one-year mortality). A frequency-matched random atom and an atom for a different concept leave the logit unchanged.</p>
   </div>
   <div class="two" style="margin-top:8px">
-    <figure><img src="static/steer.png" alt="Change in target logit as one atom is ablated, for LBBB, wide QRS, age and one-year mortality, with random and wrong-atom controls flat at zero"><figcaption><b>Ablation audit.</b> Target atom (orange) vs. random (green) and wrong-concept (blue) atoms, <i>N</i> = 80 positives per target.</figcaption></figure>
+    <figure class="widget" id="stw">
+      <div class="seg" id="sttabs" role="tablist" aria-label="Ablation target"></div>
+      <svg id="stsvg" role="img" aria-label="Change in target logit as one atom is ablated"></svg>
+      <label class="slider"><span>Atom kept</span><input type="range" id="stdose" min="0" max="100" step="5" value="100" aria-label="Fraction of the atom kept"><b id="stdoseval">100%</b></label>
+      <div class="legend"><span><i style="background:var(--c-t)"></i>Target atom <code id="sta0"></code></span><span><i style="background:var(--c-r)"></i>Random atom <code id="sta1"></code></span><span><i style="background:var(--c-w)"></i>Wrong-concept atom <code id="sta2"></code></span></div>
+      <div class="readout" id="stread"></div>
+      <figcaption><b>Ablation audit.</b> Drag the slider to scale one Layer-6 atom from full (100%) to zero; the frozen predictor’s target logit changes only for the target atom. Mean over <i>N</i> = 80 positives with 95% bootstrap band; measured at five doses. <a href="static/steer.png">Static figure</a></figcaption>
+    </figure>
     <figure><img src="static/probe.png" alt="Top five atoms of the PVC and paced-rhythm probes with their most over-represented report statements"><figcaption><b>Sparse probing.</b> The PVC (AUROC 0.947) and paced-rhythm (0.951) predictions decomposed into their five highest-weight atoms, each labeled by its most over-represented report statement.</figcaption></figure>
   </div>
   <div class="narrow">
@@ -247,6 +278,78 @@ document.getElementById('copybtn').addEventListener('click',async e=>{
   catch(_){const r=document.createRange();r.selectNodeContents(document.getElementById('bib'));const s=getSelection();s.removeAllRanges();s.addRange(r);e.target.textContent='Selected'}
   setTimeout(()=>e.target.textContent='Copy',1500);
 });
+</script>
+<script>
+const CAD={"rel":{"names":["LBBB","RBBB","IVCD","Paced","Wide QRS","Long QTc","AF","Flutter"],"M":[[1.0,0.34599998593330383,0.8339999914169312,0.7509999871253967,0.8169999718666077,0.6439999938011169,0.24699999392032623,0.17499999701976776],[0.34599998593330383,1.0,0.42800000309944153,0.45100000500679016,0.7979999780654907,0.527999997138977,0.2199999988079071,0.1459999978542328],[0.8339999914169312,0.42800000309944153,1.0,0.8700000047683716,0.8460000157356262,0.7910000085830688,0.5220000147819519,0.4620000123977661],[0.7509999871253967,0.45100000500679016,0.8700000047683716,1.0,0.7960000038146973,0.7049999833106995,0.4740000069141388,0.3009999990463257],[0.8169999718666077,0.7979999780654907,0.8460000157356262,0.7960000038146973,1.0,0.765999972820282,0.3630000054836273,0.2720000147819519],[0.6439999938011169,0.527999997138977,0.7910000085830688,0.7049999833106995,0.765999972820282,1.0,0.6579999923706055,0.6430000066757202],[0.24699999392032623,0.2199999988079071,0.5220000147819519,0.4740000069141388,0.3630000054836273,0.6579999923706055,1.0,0.8109999895095825],[0.17499999701976776,0.1459999978542328,0.4620000123977661,0.3009999990463257,0.2720000147819519,0.6430000066757202,0.8109999895095825,1.0]],"known":[[0,4],[1,4],[2,4],[3,4],[0,2],[1,2],[0,3],[2,3],[0,1],[4,5],[0,5],[3,5],[6,7]],"blocks":[6]},"steer":{"doses":[1.0,0.75,0.5,0.25,0.0],"t":[{"name":"LBBB","atoms":[1122,102,6278],"N":80,"ci":{"target":[[0.0,-0.154,-0.3079,-0.4619,-0.6158],[0.0,-0.1559,-0.3117,-0.4676,-0.6234],[0.0,-0.1518,-0.3036,-0.4555,-0.6073]],"random":[[0.0,-0.0001,-0.0002,-0.0003,-0.0004],[0.0,-0.0001,-0.0002,-0.0003,-0.0004],[0.0,-0.0001,-0.0002,-0.0003,-0.0003]],"wrong":[[0.0,-0.0,-0.0,-0.0,-0.0],[0.0,-0.0,-0.0,-0.0,-0.0],[0.0,-0.0,-0.0,-0.0,-0.0]]}},{"name":"Wide QRS","atoms":[1012,3605,4392],"N":80,"ci":{"target":[[0.0,-0.0988,-0.1977,-0.2965,-0.3954],[0.0,-0.1031,-0.2061,-0.3092,-0.4123],[0.0,-0.0941,-0.1883,-0.2824,-0.3765]],"random":[[0.0,0.0,0.0001,0.0001,0.0002],[0.0,0.0,0.0001,0.0001,0.0002],[0.0,0.0,0.0001,0.0001,0.0002]],"wrong":[[0.0,0.0,0.0,0.0,0.0001],[0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0001]]}},{"name":"Age (old vs young)","atoms":[1641,391,6790],"N":80,"ci":{"target":[[0.0,-0.089,-0.178,-0.267,-0.3561],[0.0,-0.0916,-0.1831,-0.2747,-0.3663],[0.0,-0.0862,-0.1725,-0.2587,-0.3449]],"random":[[0.0,0.0001,0.0002,0.0003,0.0005],[0.0,0.0001,0.0002,0.0003,0.0004],[0.0,0.0001,0.0003,0.0004,0.0005]],"wrong":[[0.0,0.0005,0.001,0.0015,0.002],[0.0,0.0004,0.0008,0.0012,0.0016],[0.0,0.0006,0.0012,0.0018,0.0025]]}},{"name":"1-yr mortality","atoms":[4408,5013,7010],"N":80,"ci":{"target":[[0.0,-0.0676,-0.1351,-0.2027,-0.2703],[0.0,-0.0695,-0.1389,-0.2084,-0.2779],[0.0,-0.0659,-0.1319,-0.1978,-0.2638]],"random":[[0.0,0.0,0.0,0.0001,0.0001],[0.0,0.0,0.0,0.0001,0.0001],[0.0,0.0,0.0001,0.0001,0.0001]],"wrong":[[0.0,0.0002,0.0005,0.0007,0.001],[0.0,0.0002,0.0004,0.0006,0.0008],[0.0,0.0003,0.0006,0.0009,0.0012]]}}]}};
+const NS="http://www.w3.org/2000/svg";
+function el(t,a,p){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e}
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+/* ---- relations heatmap ---- */
+(function(){
+  const R=CAD.rel,n=R.names.length,cs=40,L=74,T=74,svg=document.getElementById('relsvg');
+  svg.setAttribute('viewBox',`0 0 ${L+n*cs+4} ${T+n*cs+4}`);
+  const stops=[[0.2,[251,228,224]],[0.4,[234,167,156]],[0.6,[205,111,99]],[0.75,[168,74,66]],[0.9,[122,46,46]]];
+  function col(v){v=Math.max(.2,Math.min(.9,v));for(let i=1;i<stops.length;i++){if(v<=stops[i][0]){const[a,ca]=stops[i-1],[b,cb]=stops[i],f=(v-a)/(b-a);return`rgb(${ca.map((c,k)=>Math.round(c+(cb[k]-c)*f)).join(',')})`}}return'rgb(122,46,46)'}
+  const known=new Set(R.known.flatMap(([a,b])=>[a+','+b,b+','+a]));
+  const cells=[],labs=[];let sel=-1;
+  const tip=document.getElementById('reltip'),read=document.getElementById('relread');
+  for(let i=0;i<n;i++){
+    const ly=el('text',{x:L-6,y:T+i*cs+cs/2+4,'text-anchor':'end',class:'lab'},svg);ly.textContent=R.names[i];
+    const lx=el('text',{x:0,y:0,'text-anchor':'start',class:'lab',transform:`translate(${L+i*cs+cs/2+4},${T-6}) rotate(-60)`},svg);lx.textContent=R.names[i];
+    labs.push([ly,lx]);[ly,lx].forEach(t=>t.addEventListener('click',()=>pick(i)));
+    for(let j=0;j<n;j++){
+      const v=R.M[i][j],g=el('g',{class:'cell'},svg);
+      const r=el('rect',{x:L+j*cs,y:T+i*cs,width:cs-1,height:cs-1,rx:3,fill:i==j?css('--line'):col(v)},g);
+      if(i!=j){const t=el('text',{x:L+j*cs+cs/2,y:T+i*cs+cs/2+4,'text-anchor':'middle'},g);t.textContent=v.toFixed(2);t.style.fill=v>0.65?'#fff':'#222';t.style.fontSize='11px'}
+      if(known.has(i+','+j)){const st=el('text',{x:L+j*cs+7,y:T+i*cs+11,'text-anchor':'middle'},g);st.textContent='★';st.style.fill='#f2b705';st.style.fontSize='10px'}
+      cells.push([i,j,g]);
+      g.addEventListener('mouseenter',()=>{if(i==j)return;const b=svg.getBoundingClientRect(),sc=b.width/svg.viewBox.baseVal.width;tip.hidden=false;tip.style.left=(L+j*cs+cs/2)*sc+'px';tip.style.top=(T+i*cs)*sc+'px';tip.textContent=`${R.names[i]} – ${R.names[j]}: ${v.toFixed(2)}${known.has(i+','+j)?'  ★ known pair':''}`});
+      g.addEventListener('mouseleave',()=>tip.hidden=true);
+      g.addEventListener('click',()=>pick(i));
+    }
+  }
+  const b=R.blocks[0];el('line',{x1:L-2,x2:L+n*cs,y1:T+b*cs-.5,y2:T+b*cs-.5,stroke:css('--fg'),'stroke-width':1.5},svg);el('line',{y1:T-2,y2:T+n*cs,x1:L+b*cs-.5,x2:L+b*cs-.5,stroke:css('--fg'),'stroke-width':1.5},svg);
+  function pick(i){
+    sel=sel===i?-1:i;
+    cells.forEach(([a,c,g])=>g.style.opacity=(sel<0||a==sel||c==sel)?1:.25);
+    labs.forEach((p,k)=>p.forEach(t=>t.classList.toggle('on',k==sel)));
+    if(sel<0){read.textContent='Hover a cell for its value; click a concept to rank its neighbours.';return}
+    const nb=R.names.map((nm,k)=>[nm,R.M[sel][k],k]).filter(x=>x[2]!=sel).sort((a,b)=>b[1]-a[1]);
+    read.innerHTML=`<b>${R.names[sel]}</b> nearest in atom space: `+nb.slice(0,3).map(x=>`${x[0]} (${x[1].toFixed(2)})`).join(', ')+`; farthest: ${nb[nb.length-1][0]} (${nb[nb.length-1][1].toFixed(2)}).`;
+  }
+})();
+/* ---- ablation slider ---- */
+(function(){
+  const S=CAD.steer,D=S.doses,svg=document.getElementById('stsvg'),W=440,H=250,ml=52,mr=12,mt=12,mb=36;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const tabs=document.getElementById('sttabs'),dose=document.getElementById('stdose'),dv=document.getElementById('stdoseval'),read=document.getElementById('stread');
+  let cur=0;
+  S.t.forEach((t,k)=>{const b=document.createElement('button');b.type='button';b.role='tab';b.textContent=t.name;b.setAttribute('aria-selected',k==0);b.onclick=()=>{cur=k;[...tabs.children].forEach((x,m)=>x.setAttribute('aria-selected',m==k));draw()};tabs.appendChild(b)});
+  dose.oninput=draw;
+  function interp(arr,d){for(let i=1;i<D.length;i++){if(d>=D[i]){const f=(D[i-1]-d)/(D[i-1]-D[i]);return arr[i-1]+(arr[i]-arr[i-1])*f}}return arr[arr.length-1]}
+  function draw(){
+    svg.innerHTML='';const t=S.t[cur],d=dose.value/100;dv.textContent=dose.value+'%';
+    const ymin=Math.min(...t.ci.target[1])*1.12,ymax=Math.max(0.05*-ymin,0.02);
+    const X=v=>ml+(1-v)*(W-ml-mr),Y=v=>mt+(ymax-v)/(ymax-ymin)*(H-mt-mb);
+    const step=Math.abs(ymin)>0.45?0.2:0.1;
+    for(let v=0;v>=ymin;v-=step){el('line',{x1:ml,x2:W-mr,y1:Y(v),y2:Y(v),stroke:css('--line')},svg);const tx=el('text',{x:ml-6,y:Y(v)+4,'text-anchor':'end'},svg);tx.textContent=(Math.abs(v)<1e-9?0:v).toFixed(1).replace('-','−')}
+    D.forEach(v=>{const tx=el('text',{x:X(v),y:H-mb+18,'text-anchor':'middle'},svg);tx.textContent=Math.round(v*100)+'%'});
+    const yl=el('text',{x:0,y:0,transform:`translate(13,${(H-mb+mt)/2}) rotate(-90)`,'text-anchor':'middle'},svg);yl.textContent='Δ target logit';
+    const xl=el('text',{x:(W+ml)/2,y:H-2,'text-anchor':'middle'},svg);xl.textContent='atom kept (1 → 0)';
+    [['wrong','--c-w','4 3'],['random','--c-r',''],['target','--c-t','']].forEach(([c,v,da])=>{
+      const [m,lo,hi]=t.ci[c],colr=css(v);
+      el('path',{d:'M'+D.map((x,i)=>X(x)+','+Y(hi[i])).join('L')+'L'+D.map((x,i)=>X(x)+','+Y(lo[i])).reverse().join('L')+'Z',fill:colr,opacity:.2},svg);
+      el('path',{d:'M'+D.map((x,i)=>X(x)+','+Y(m[i])).join('L'),fill:'none',stroke:colr,'stroke-width':c=='target'?2.5:2,'stroke-dasharray':da},svg);
+      el('circle',{cx:X(d),cy:Y(interp(m,d)),r:5,fill:colr,stroke:css('--bg'),'stroke-width':1.5},svg);
+    });
+    el('line',{x1:X(d),x2:X(d),y1:mt,y2:H-mb,stroke:css('--muted'),'stroke-dasharray':'2 3'},svg);
+    ['sta0','sta1','sta2'].forEach((id,k)=>document.getElementById(id).textContent='#'+t.atoms[k]);
+    const f=x=>(x<0?'−':x>0?'+':'')+Math.abs(x).toFixed(3);
+    read.innerHTML=`<b>${t.name}</b>, atom kept at ${dose.value}%: target <b style="color:var(--c-t)">${f(interp(t.ci.target[0],d))}</b>, random ${f(interp(t.ci.random[0],d))}, wrong-concept ${f(interp(t.ci.wrong[0],d))}.`;
+  }
+  draw();
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change',draw);
+})();
 </script>
 </body>
 </html>
