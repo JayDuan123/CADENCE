@@ -172,6 +172,21 @@ footer a{color:var(--muted)}
 .lrho b{font-size:22px;color:var(--accent)}
 @media (max-width:760px){.llmgrid{grid-template-columns:minmax(0,1fr)}}
 #rhosvg{display:block;width:100%;height:auto}#rhosvg text{fill:var(--muted);font:11px Inter,sans-serif}
+
+.f2grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:20px;align-items:start}
+#f2svg{display:block;width:100%;height:auto}
+#f2svg text{fill:var(--muted);font:11px Inter,sans-serif}
+.f2leg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12.5px;color:var(--fg-2);margin-top:4px}
+.f2leg i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.f2leg i.dot{background:repeating-linear-gradient(90deg,var(--muted) 0 3px,transparent 3px 6px)}
+.f2leg i.band{height:9px;background:var(--muted);opacity:.25}
+.f2ecg{display:flex;flex-direction:column;gap:10px}
+.f2row .ttl{font-size:13px;font-weight:600;margin-bottom:2px}
+.f2row .ttl small{font-weight:400;color:var(--muted)}
+.f2tr{position:relative;background:var(--bg);border:1px solid var(--line);border-radius:6px;margin-bottom:5px}
+.f2tr canvas{display:block;width:100%;height:58px}
+.f2tr span{position:absolute;left:6px;top:3px;font-size:11px;color:var(--muted);background:var(--bg);padding:0 3px;border-radius:3px}
+@media (max-width:860px){.f2grid{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
 <body>
@@ -263,9 +278,20 @@ footer a{color:var(--muted)}
   <h3>Atoms beat raw neurons, and more so with depth</h3>
   <p>Concepts become more decodable with depth: best-atom AUROC rises from Layer 1 to Layer 6 for phenotype (0.73 → 0.88), morphology (0.72 → 0.90) and age (0.71 → 0.83). For phenotype and morphology the best atom beats the best dense dimension at every layer. Sparse atom probes match or exceed dense-embedding probes at every layer, with the largest gain in shallow layers (phenotype 0.843 vs. 0.805 at Layer 1).</p>
   </div>
-  <figure>
-    <img src="static/layers.png" alt="Best-atom and linear-probe AUROC across six CSFM layers for SAE atoms vs. dense dimensions, and two atoms highlighted on MIMIC and PTB-XL ECGs">
-    <figcaption><b>What the dictionary encodes, how well it predicts, and where it fires.</b> (a) Best single-atom AUROC and (b) linear-probe test AUROC across layers; solid lines are SAE atoms, dotted lines CSFM dense. (c) A PVC atom fires on the single premature beat; (d) an atrial-fibrillation atom fires on the fibrillatory baseline. Each atom is shown on a MIMIC (top) and an external PTB-XL (bottom) record.</figcaption>
+  <figure class="widget" id="f2w">
+    <div class="f2grid">
+      <div>
+        <div class="seg" id="f2tabs" role="tablist" aria-label="Metric">
+          <button type="button" data-k="a" aria-selected="true">(a) Best single atom</button>
+          <button type="button" data-k="b" aria-selected="false">(b) Linear probe</button>
+        </div>
+        <svg id="f2svg" role="img" aria-label="AUROC across the six CSFM layers, SAE atoms versus dense embedding"></svg>
+        <div class="f2leg"><span><i style="background:#1f77b4"></i>Phenotype</span><span><i style="background:#d62728"></i>Morphology</span><span><i style="background:#2ca02c"></i>Age</span><span><i class="dot"></i>CSFM dense</span><span><i class="band"></i>SAE − dense margin</span></div>
+        <div class="readout" id="f2read">&nbsp;</div>
+      </div>
+      <div id="f2ecg" class="f2ecg"></div>
+    </div>
+    <figcaption><b>What the dictionary encodes, how well it predicts, and where it fires.</b> Left: (a) best single-atom AUROC and (b) linear-probe test AUROC across layers; solid lines are SAE atoms, dotted lines the CSFM dense embedding, shaded the SAE-over-dense margin. Hover a layer for its values. Right: (c) a PVC atom fires on the single premature beat; (d) an atrial-fibrillation atom fires on the fibrillatory baseline; top MIMIC, bottom external PTB-XL record, red where the atom fires. <a href="static/layers.png">Static figure</a></figcaption>
   </figure>
 
   <div class="narrow">
@@ -656,6 +682,64 @@ fetch('static/explorer/index.json').then(r=>r.json()).then(I=>{
         rd.innerHTML=`Median ρ <b>${med.toFixed(2)}</b> · <b>${(gt*100).toFixed(1)}%</b> of atoms above 0.3 · <b>${(fail*100).toFixed(1)}%</b> fail (ρ ≤ 0)`}})()}
   const io=new IntersectionObserver(es=>{if(es[0].isIntersecting){io.disconnect();run()}},{threshold:.4});io.observe(svg);
 }).catch(()=>{document.getElementById('rhow').style.display='none'});
+})();
+</script>
+<script>
+(function(){
+const svg=document.getElementById('f2svg');if(!svg)return;
+fetch('static/fig2.json').then(r=>r.json()).then(D=>{
+  const NS='http://www.w3.org/2000/svg',el=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e};
+  const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const C={phenotype:'#1f77b4',morphology:'#d62728',age:'#2ca02c'},K=['phenotype','morphology','age'],L=D.layers;
+  const W=420,H=280,ml=44,mr=12,mt=10,mb=34;svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const rd=document.getElementById('f2read'),tabs=document.getElementById('f2tabs');
+  let mode='a',prog=0,anim=null,hover=-1;
+  const rng={a:[0.68,0.92],b:[0.80,0.97]};
+  const X=l=>ml+(l-1)/5*(W-ml-mr);
+  function Y(v){const[a,b]=rng[mode];return mt+(1-(v-a)/(b-a))*(H-mt-mb)}
+  function val(arr,t){const i=Math.floor(t),f=t-i;return i>=5?arr[5]:arr[i]+(arr[i+1]-arr[i])*f}
+  function draw(){svg.innerHTML='';const[a,b]=rng[mode],st=mode==='a'?0.05:0.04;
+    for(let v=Math.ceil(a/st)*st;v<=b+1e-9;v+=st){el('line',{x1:ml,x2:W-mr,y1:Y(v),y2:Y(v),stroke:css('--line')},svg);const t=el('text',{x:ml-6,y:Y(v)+4,'text-anchor':'end'},svg);t.textContent=v.toFixed(2)}
+    L.forEach(l=>{const t=el('text',{x:X(l),y:H-mb+16,'text-anchor':'middle'},svg);t.textContent='L'+l});
+    const xl=el('text',{x:(W+ml)/2,y:H-3,'text-anchor':'middle'},svg);xl.textContent='CSFM layer';
+    const yl=el('text',{x:0,y:0,transform:`translate(11,${(H-mb+mt)/2}) rotate(-90)`,'text-anchor':'middle'},svg);yl.textContent=mode==='a'?'best single-atom AUROC':'linear-probe test AUROC';
+    const T=prog*5; // 0..5 progress in layer units
+    K.forEach(k=>{const s=D[mode][k].sae,d=D[mode][k].dense,pts=[];for(let t=0;t<=T+1e-9;t+=0.05)pts.push(t);if(pts[pts.length-1]<T)pts.push(T);
+      // margin band where sae>=dense
+      let band='';pts.forEach((t,i)=>{band+=(i?'L':'M')+X(1+t)+','+Y(Math.max(val(s,t),val(d,t)))});for(let i=pts.length-1;i>=0;i--)band+='L'+X(1+pts[i])+','+Y(val(d,pts[i]));
+      if(pts.length>1)el('path',{d:band+'Z',fill:C[k],opacity:.13},svg);
+      el('path',{d:'M'+pts.map(t=>X(1+t)+','+Y(val(d,t))).join('L'),fill:'none',stroke:C[k],'stroke-width':2,'stroke-dasharray':'2 4',opacity:.8},svg);
+      el('path',{d:'M'+pts.map(t=>X(1+t)+','+Y(val(s,t))).join('L'),fill:'none',stroke:C[k],'stroke-width':2.6},svg);
+      for(let l=0;l<=Math.floor(T+1e-9);l++)el('circle',{cx:X(1+l),cy:Y(s[l]),r:3.6,fill:C[k],stroke:css('--bg-soft'),'stroke-width':1.2},svg)});
+    const cur=hover>=0?hover:Math.min(5,Math.floor(T+1e-9));
+    el('line',{x1:X(1+(hover>=0?hover:T)),x2:X(1+(hover>=0?hover:T)),y1:mt,y2:H-mb,stroke:css('--muted'),'stroke-dasharray':'2 3'},svg);
+    const f=v=>v.toFixed(2);
+    rd.innerHTML=`<b>Layer ${cur+1}</b> · `+K.map(k=>`<span style="color:${C[k]}">${k}</span> ${f(D[mode][k].sae[cur])} vs ${f(D[mode][k].dense[cur])}`).join(' · ')+' <span style="color:var(--muted)">(SAE vs dense)</span>';
+    // hover zones
+    L.forEach((l,i)=>{const r=el('rect',{x:X(l)-(W-ml-mr)/10,y:mt,width:(W-ml-mr)/5,height:H-mt-mb,fill:'transparent'},svg);r.addEventListener('mouseenter',()=>{hover=i;if(!anim)draw()});r.addEventListener('mouseleave',()=>{hover=-1;if(!anim)draw()})});
+  }
+  function play(){cancelAnimationFrame(anim);const t0=performance.now(),Dur=3600;
+    (function f(){prog=Math.min(1,(performance.now()-t0)/Dur);draw();if(prog<1)anim=requestAnimationFrame(f);else anim=null})()}
+  tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>{mode=b.dataset.k;tabs.querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected',x===b));hover=-1;play()});
+  draw();
+  const io=new IntersectionObserver(es=>{if(es[0].isIntersecting){io.disconnect();play();setTimeout(()=>{if(mode==='a'){tabs.querySelectorAll('button')[1].click()}},3600+2600)}},{threshold:.35});io.observe(svg);
+  /* ---- ECG sweeps (c,d) ---- */
+  const box=document.getElementById('f2ecg'),cvs=[];
+  D.ecg.forEach((row,ri)=>{const r=document.createElement('div');r.className='f2row';r.innerHTML=`<div class="ttl">(${'cd'[ri]}) ${row.title}</div>`;
+    row.ex.forEach(x=>{const d=document.createElement('div');d.className='f2tr';const c=document.createElement('canvas');d.appendChild(c);d.insertAdjacentHTML('beforeend',`<span>${x.ds} · lead ${x.lead} · atom #${x.atom}</span>`);r.appendChild(d);cvs.push([c,x])});box.appendChild(r)});
+  function sizeAll(){cvs.forEach(([c])=>{const d=devicePixelRatio||1;c.width=c.clientWidth*d;c.height=c.clientHeight*d;c.getContext('2d').setTransform(d,0,0,d,0,0)})}
+  sizeAll();addEventListener('resize',sizeAll);
+  let t0=null;
+  function frame(){const now=performance.now();if(t0==null)t0=now;const pos=((now-t0)/1000*125)%1250,fg=css('--fg'),bg=css('--bg');
+    cvs.forEach(([c,x])=>{const g=c.getContext('2d'),W=c.clientWidth,H=c.clientHeight,n=x.w.length,X=i=>i/(n-1)*W,Y=v=>H/2+4-v/127*(H/2-6),mx=Math.max(...x.act)||1;
+      g.fillStyle=bg;g.fillRect(0,0,W,H);const end=Math.floor(pos);
+      for(let i=1;i<n;i++){const p=Math.min(99,Math.floor(i/12.5)),on=x.act[p]>0,drawn=i<=end;
+        if(on&&drawn){g.fillStyle=`rgba(224,38,47,${.05+.12*x.act[p]/mx})`;g.fillRect(X(i-1),0,X(i)-X(i-1)+.5,H)}
+        g.globalAlpha=drawn?1:.18;g.strokeStyle=on&&drawn?'#e0262f':fg;g.lineWidth=on&&drawn?1.8:1;g.beginPath();g.moveTo(X(i-1),Y(x.w[i-1]));g.lineTo(X(i),Y(x.w[i]));g.stroke()}
+      g.globalAlpha=1;g.fillStyle='#e0262f';g.beginPath();g.arc(X(Math.min(n-1,end)),Y(x.w[Math.min(n-1,end)]),3,0,7);g.fill()});
+    requestAnimationFrame(frame)}
+  const io2=new IntersectionObserver(es=>{if(es[0].isIntersecting){io2.disconnect();requestAnimationFrame(frame)}},{threshold:.2});io2.observe(box);
+}).catch(()=>{const f=document.getElementById('f2w');f.querySelector('.f2grid').outerHTML='<img src="static/layers.png" alt="Best-atom and linear-probe AUROC across layers, and two atoms highlighted on MIMIC and PTB-XL ECGs" style="width:100%">'});
 })();
 </script>
 </body>
