@@ -128,6 +128,7 @@ footer a{color:var(--muted)}
   <div class="btns">
     <a class="btn" href="static/CADENCE.pdf" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6V2zm8 1.5V8h4.5L14 3.5zM8.5 12h9v1.5h-9V12zm0 3.5h9V17h-9v-1.5z"/></svg>Paper</a>
     <a class="btn" href="https://github.com/JayDuan123/2027-KDD-Ai4s-track-CADENCE" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>Code</a>
+    <a class="btn" href="explorer.html"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-6 4 12 2-6h6v2h-4.6L13 20 9 8.6 8.4 14H3z"/></svg>Atom Explorer</a>
   </div>
 </header>
 
@@ -234,6 +235,7 @@ footer a{color:var(--muted)}
 
   <h3>LLM descriptions that predict activations</h3>
   <p>For 1,000 random atoms out of the 2,991 interpretable ones, an LLM writes a description from activation evidence alone, with no report text. From that description alone it then predicts activations on held-out ECGs. Predicted and measured activations reach a median Spearman ρ of 0.65; 92% of atoms exceed 0.3 and 2% fail (ρ ≤ 0).</p>
+  <div class="take"><b>Browse them yourself.</b> The <a href="explorer.html" style="color:var(--accent-ink)">Atom Explorer</a> shows all 1,000 atoms on their top-activating ECGs, red where each one fires, with the LLM’s name and description and its validation score.</div>
   </div>
   <div class="two" style="margin-top:8px;grid-template-columns:minmax(0,2fr) minmax(0,3fr)">
     <figure><img src="static/llm_rho.png" alt="Histogram of per-atom Spearman correlation between LLM-predicted and measured held-out activations"><figcaption>Per-atom Spearman ρ, 1,000 atoms.</figcaption></figure>
