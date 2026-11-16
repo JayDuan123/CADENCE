@@ -151,6 +151,26 @@ footer a{color:var(--muted)}
 .dcard .nm{font-size:14px;font-weight:600;line-height:1.3;margin:2px 0}
 .dcard .mt{font-size:12px;color:var(--muted)}
 @media (max-width:760px){.dcards{grid-template-columns:repeat(2,minmax(0,1fr))}#dcv{height:200px}.da{width:22px}@keyframes flow{to{left:22px}}}
+
+.prbars{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.prrow{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;align-items:center}
+.prrow .rk{font-size:12px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.prbar{position:relative;height:38px;border-radius:6px;background:var(--bg);overflow:hidden;border:1px solid var(--line)}
+.prbar i{position:absolute;inset:0 auto 0 0;width:0;background:#fdcdac;border-right:2px solid #d98b3f;transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.prbar span{position:relative;display:block;padding:3px 8px;font-size:12.5px;line-height:1.3;color:#1d1a24;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;transition:opacity .4s .25s}
+.prbar span b{font-weight:600}.prbar span em{font-style:normal;color:#6b5a4d}
+.prrow.on .prbar span{opacity:1}
+.llmgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.lk{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-ink);font-weight:600;margin-bottom:6px}
+.lname{font-size:19px;font-weight:700;min-height:1.4em}
+.ldesc{font-size:14.5px;color:var(--fg-2);min-height:7.5em;margin-top:4px}
+.ldesc::after{content:"▍";color:var(--accent);animation:pulse 1s infinite}
+.lmeta{font-size:12.5px;color:var(--muted);margin-top:6px}
+#lsvg{display:block;width:100%;height:auto}
+#lsvg text{fill:var(--muted);font:11px Inter,sans-serif}
+.lrho{font-size:15px;margin-top:4px;min-height:1.5em}
+.lrho b{font-size:22px;color:var(--accent)}
+@media (max-width:760px){.llmgrid{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
 <body>
@@ -282,7 +302,12 @@ footer a{color:var(--muted)}
       <div class="readout" id="stread"></div>
       <figcaption><b>Ablation audit.</b> Drag the slider to scale one Layer-6 atom from full (100%) to zero; the frozen predictor’s target logit changes only for the target atom. Mean over <i>N</i> = 80 positives with 95% bootstrap band; measured at five doses. <a href="static/steer.png">Static figure</a></figcaption>
     </figure>
-    <figure><img src="static/probe.png" alt="Top five atoms of the PVC and paced-rhythm probes with their most over-represented report statements"><figcaption><b>Sparse probing.</b> The PVC (AUROC 0.947) and paced-rhythm (0.951) predictions decomposed into their five highest-weight atoms, each labeled by its most over-represented report statement.</figcaption></figure>
+    <figure class="widget" id="prw">
+      <div class="seg" id="prtabs" role="tablist" aria-label="Diagnosis"></div>
+      <div id="prbars" class="prbars"></div>
+      <div class="readout" id="prread"></div>
+      <figcaption><b>Sparse probing.</b> A diagnosis probe on the atom activations, decomposed into its five highest-weight atoms that fire on the test set. Each bar is the atom’s probe weight, labelled with the machine-report statement most over-represented among the ECGs it fires on (lift = over-representation). <a href="static/probe.png">Static figure</a></figcaption>
+    </figure>
   </div>
   <div class="narrow">
   <div class="take"><b>Takeaway.</b> Predictions decompose into a few named atoms. The top PVC atom is about 90× over-represented among ECGs read as “frequent premature ventricular contractions”, and the top RBBB atoms localize to the terminal QRS in V1/V2, where RBBB is diagnosed.</div>
@@ -291,6 +316,14 @@ footer a{color:var(--muted)}
   <p>For 1,000 random atoms out of the 2,991 interpretable ones, an LLM writes a description from activation evidence alone, with no report text. From that description alone it then predicts activations on held-out ECGs. Predicted and measured activations reach a median Spearman ρ of 0.65; 92% of atoms exceed 0.3 and 2% fail (ρ ≤ 0).</p>
   <div class="take"><b>Browse them yourself.</b> The <a href="explorer.html" style="color:var(--accent-ink)">Atom Explorer</a> shows all 1,000 atoms on their top-activating ECGs, red where each one fires, with the LLM’s name and description and its validation score.</div>
   </div>
+  <figure class="widget llmw" id="llmw">
+    <div class="llmgrid">
+      <div class="llmtxt"><div class="lk">Step 1 · LLM reads the atom’s top activations and writes</div><div class="lname" id="lname"></div><div class="ldesc" id="ldesc"></div><div class="lmeta" id="lmeta"></div></div>
+      <div class="llmplot"><div class="lk">Step 2 · from the text alone, it predicts activation on 18 held-out crops</div><svg id="lsvg" role="img" aria-label="Scatter of LLM-predicted versus measured activation on held-out crops"></svg><div class="lrho" id="lrho"></div></div>
+    </div>
+    <div class="seg" id="ltabs" role="tablist" aria-label="Atom" style="margin-top:8px"></div>
+    <figcaption>Four atoms from the 1,000-atom run, from strong (ρ 0.93) to weak (ρ 0.30); the median atom is ρ 0.65. Measured activation is scaled to each atom’s maximum. Crops are high-, median- and low-activation tokens; low crops (measured 0) often overlap at the origin.</figcaption>
+  </figure>
   <div class="two" style="margin-top:8px;grid-template-columns:minmax(0,2fr) minmax(0,3fr)">
     <figure><img src="static/llm_rho.png" alt="Histogram of per-atom Spearman correlation between LLM-predicted and measured held-out activations"><figcaption>Per-atom Spearman ρ, 1,000 atoms.</figcaption></figure>
     <figure><img src="static/llm_atoms.png" alt="Three atoms with their top-activating ECG, red where the atom fires, and the LLM-written name and description"><figcaption>Three atoms: top-activating ECG (red where the atom fires) and the LLM’s name and description.</figcaption></figure>
@@ -432,7 +465,7 @@ if('IntersectionObserver' in window){
     const el=e.target,node=[...el.childNodes].find(n=>n.nodeType===3&&/\d/.test(n.textContent));if(!node)return;
     const fin=node.textContent,num=parseFloat(fin.replace(/[^\d.]/g,'')),dec=(fin.split('.')[1]||'').replace(/\D/g,'').length,pre=fin.match(/^[^\d]*/)[0];
     const t0=performance.now(),D=1100;
-    (function f(t){const k=Math.min(1,(t-t0)/D),v=num*(1-Math.pow(1-k,3));node.textContent=pre+v.toFixed(dec);if(k<1)requestAnimationFrame(f);else node.textContent=fin})(t0);
+    (function f(){const t=performance.now(),k=Math.min(1,(t-t0)/D),v=num*(1-Math.pow(1-k,3));node.textContent=pre+v.toFixed(dec);if(k<1)requestAnimationFrame(f);else node.textContent=fin})(t0);
   }),{threshold:.6});
   vs.forEach(v=>io2.observe(v));
 }
@@ -528,6 +561,59 @@ fetch('static/decomp.json').then(r=>r.json()).then(D=>{
   const io=new IntersectionObserver(es=>{if(es[0].isIntersecting&&!running){running=true;requestAnimationFrame(frame)}},{threshold:.35});io.observe(cv);
   document.getElementById('dcap').insertAdjacentHTML('beforeend',` Lead ${D.lead}, 4 s shown.`);
 }).catch(()=>{document.getElementById('decomp').style.display='none'});
+})();
+</script>
+<script>
+(function(){
+fetch('static/anim.json').then(r=>r.json()).then(A=>{
+/* ---------- probe decomposition ---------- */
+(function(){
+  const P=A.probe,AUC={'PVC':'0.947','RBBB':'0.988','Paced rhythm':'0.951'},tabs=document.getElementById('prtabs'),box=document.getElementById('prbars'),rd=document.getElementById('prread');
+  let cur=0,auto=true,timer=null;
+  P.forEach((p,k)=>{const b=document.createElement('button');b.type='button';b.role='tab';b.textContent=p.name;b.onclick=()=>{auto=false;show(k)};tabs.appendChild(b)});
+  function show(k){cur=k;[...tabs.children].forEach((b,m)=>b.setAttribute('aria-selected',m===k));
+    const p=P[k],mx=Math.max(...p.atoms.map(a=>a.coef));
+    box.innerHTML=p.atoms.map(a=>`<div class="prrow"><div class="rk">${a.rank}</div><div class="prbar"><i></i><span><b>#${a.id}</b> · ${a.stmt||a.geo} ${a.lift?`<em>· lift ${a.lift}×</em>`:''}<br><em>${a.geo} · weight ${a.coef.toFixed(3)}</em></span></div></div>`).join('');
+    const rows=[...box.children];clearTimeout(timer);
+    rows.forEach((r,m)=>setTimeout(()=>{r.classList.add('on');r.querySelector('i').style.width=(p.atoms[m].coef/mx*100)+'%'},200+m*420));
+    rd.innerHTML=`<b>${p.name}</b> probe${AUC[p.name]?` (test AUROC ${AUC[p.name]})`:''}: ${p.atoms.length} named atoms carry its top weights${p.skipped.length?(p.skipped.length>1?`; weight ranks ${p.skipped.join(' and ')} are atoms that never fire on the test set and are skipped, as in the paper`:`; weight rank ${p.skipped[0]} is an atom that never fires on the test set and is skipped, as in the paper`):''}.`;
+    if(auto)timer=setTimeout(()=>{if(auto)show((cur+1)%P.length)},200+p.atoms.length*420+4200);
+  }
+  const io=new IntersectionObserver(es=>{if(es[0].isIntersecting){io.disconnect();show(0)}},{threshold:.3});io.observe(box);
+})();
+/* ---------- LLM describe-then-validate ---------- */
+(function(){
+  const L=A.llm,svg=document.getElementById('lsvg'),NS='http://www.w3.org/2000/svg',tabs=document.getElementById('ltabs');
+  const nm=document.getElementById('lname'),ds=document.getElementById('ldesc'),mt=document.getElementById('lmeta'),rh=document.getElementById('lrho');
+  const W=360,H=262,ml=50,mr=10,mt_=26,mb=34;svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const X=v=>ml+v*(W-ml-mr),Y=v=>mt_+(1-v)*(H-mt_-mb);
+  const el=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e};
+  const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const BC={high:'#d62839',median:'#e08e1b',low:'#1f9e89'};
+  let cur=0,auto=true,run=0;
+  L.forEach((a,k)=>{const b=document.createElement('button');b.type='button';b.role='tab';b.textContent=`#${a.id} · ρ ${a.rho.toFixed(2)}`;b.onclick=()=>{auto=false;play(k)};tabs.appendChild(b)});
+  function axes(){svg.innerHTML='';
+    for(let v=0;v<=1.001;v+=.25){el('line',{x1:X(0),x2:X(1),y1:Y(v),y2:Y(v),stroke:css('--line')},svg);const t=el('text',{x:ml-6,y:Y(v)+4,'text-anchor':'end'},svg);t.textContent=v.toFixed(2)}
+    for(let v=0;v<=1.001;v+=.5){const t=el('text',{x:X(v),y:H-mb+16,'text-anchor':'middle'},svg);t.textContent=v.toFixed(1)}
+    const a=el('text',{x:(W+ml)/2,y:H-4,'text-anchor':'middle'},svg);a.textContent='measured activation (scaled)';
+    const b=el('text',{x:0,y:0,transform:`translate(10,${(H-mb+mt_)/2}) rotate(-90)`,'text-anchor':'middle'},svg);b.textContent='LLM-predicted';
+    [['high',0],['median',1],['low',2]].forEach(([k,i])=>{el('circle',{cx:ml+6+i*72,cy:9,r:4,fill:BC[k]},svg);const t=el('text',{x:ml+14+i*72,y:13},svg);t.textContent=k})}
+  async function play(k){const id=++run;cur=k;[...tabs.children].forEach((b,m)=>b.setAttribute('aria-selected',m===k));
+    const a=L[k],wait=ms=>new Promise(r=>setTimeout(r,ms));
+    nm.textContent=`“${a.name}”`;ds.textContent='';mt.textContent=`Atom #${a.id} · lead ${a.lead}`;rh.innerHTML='';axes();
+    const txt=a.desc.replace(/^./,c=>c.toUpperCase());
+    for(let i=0;i<txt.length;i+=2){if(id!==run)return;ds.textContent=txt.slice(0,i+2);await wait(14)}
+    const mx=Math.max(...a.pts.map(p=>p[0]))||1;
+    for(const [m,pr,b] of a.pts){if(id!==run)return;
+      const c=el('circle',{cx:X(m/mx),cy:Y(Math.min(1,pr)),r:5.5,fill:BC[b]||css('--accent'),opacity:.85,stroke:css('--bg'),'stroke-width':1},svg);
+      c.style.transformBox='fill-box';c.style.transformOrigin='center';c.style.transform='scale(0)';c.style.transition='transform .35s cubic-bezier(.3,1.6,.5,1)';
+      setTimeout(()=>c.style.transform='scale(1)',20);await wait(170)}
+    if(id!==run)return;rh.innerHTML=`Spearman ρ between predicted and measured: <b>${a.rho.toFixed(2)}</b>`;
+    if(auto){await wait(4200);if(id===run&&auto)play((k+1)%L.length)}
+  }
+  const io=new IntersectionObserver(es=>{if(es[0].isIntersecting){io.disconnect();play(0)}},{threshold:.3});io.observe(svg);
+})();
+}).catch(()=>{['prw','llmw'].forEach(i=>{const e=document.getElementById(i);if(e)e.style.display='none'})});
 })();
 </script>
 </body>
